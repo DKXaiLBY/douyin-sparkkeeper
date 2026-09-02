@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>火花守护 · 仪表盘概念稿</title>
+<style>
+  :root{
+    --ember-1:#ff8a3d;   /* 余烬橙 */
+    --ember-2:#ff5d73;   /* 玫瑰红 */
+    --gold:#ffd479;      /* 金 */
+    --glass-bg:linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+    --glass-stroke:rgba(255,255,255,.22);
+    --txt:#f4f1ff;
+    --txt-dim:rgba(244,241,255,.62);
+    --r:28px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Segoe UI",sans-serif;
+    color:var(--txt);
+    background:#0b0712;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+  /* 暮色背景 + 漂浮光球（液态玻璃的折射底色） */
+  .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 10% 0%, #2a1240 0%, transparent 55%),
+      radial-gradient(120% 90% at 100% 100%, #1a1330 0%, transparent 55%),
+      linear-gradient(160deg,#120a1f,#0b0712);
+  }
+  .orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:.55;z-index:-1;mix-blend-mode:screen;
+    animation:float 18s var(--ease) infinite alternate;}
+  .orb.a{width:420px;height:420px;left:-120px;top:-80px;background:radial-gradient(circle,#ff8a3d,transparent 70%);}
+  .orb.b{width:360px;height:360px;right:-100px;top:120px;background:radial-gradient(circle,#ff5d73,transparent 70%);animation-delay:-6s;}
+  .orb.c{width:300px;height:300px;left:40%;bottom:-120px;background:radial-gradient(circle,#7b6bff,transparent 70%);animation-delay:-11s;}
+  @keyframes float{to{transform:translate3d(40px,30px,0) scale(1.12);}}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,4vw,40px);}
+
+  /* 玻璃容器 */
+  .glass{
+    position:relative;
+    background:var(--glass-bg);
+    backdrop-filter:blur(40px) saturate(170%);
+    -webkit-backdrop-filter:blur(40px) saturate(170%);
+    border:1px solid var(--glass-stroke);
+    border-radius:var(--r);
+    box-shadow:0 18px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.28);
+    overflow:hidden;
+  }
+  /* 顶部高光（液态玻璃的镜面反射） */
+  .glass::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,.16), transparent 32%);
+    mix-blend-mode:overlay;
+  }
+
+  header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:26px;
+    background:linear-gradient(145deg,var(--ember-1),var(--ember-2));
+    box-shadow:0 8px 24px rgba(255,93,115,.45), inset 0 1px 0 rgba(255,255,255,.4);}
+  .brand h1{font-size:clamp(22px,3.4vw,30px);font-weight:700;letter-spacing:.5px;}
+  .brand p{color:var(--txt-dim);font-size:13px;margin-top:2px;}
+  .status{display:flex;gap:10px;align-items:center;}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;
+    font-size:13px;background:rgba(255,255,255,.08);border:1px solid var(--glass-stroke);backdrop-filter:blur(20px);}
+  .dot{width:8px;height:8px;border-radius:50%;background:#5be59a;box-shadow:0 0 10px #5be59a;}
+  .date{color:var(--txt-dim);font-size:13px;}
+
+  .grid{display:grid;gap:18px;grid-template-columns:repeat(12,1fr);}
+  .card{padding:22px;}
+  .span4{grid-column:span 4;}
+  .span5{grid-column:span 5;}
+  .span7{grid-column:span 7;}
+  .span6{grid-column:span 6;}
+  .span8{grid-column:span 8;}
+  .span12{grid-column:span 12;}
+
+  .card h2{font-size:15px;font-weight:600;color:var(--txt-dim);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .card h2 .ico{font-size:16px;}
+
+  /* 今日概览 三个数字 */
+  .stats{display:flex;gap:8px;}
+  .stat{flex:1;text-align:center;padding:14px 6px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);}
+  .stat .n{font-size:clamp(24px,4vw,34px);font-weight:700;
+    background:linear-gradient(135deg,var(--gold),var(--ember-1));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .stat .l{font-size:12px;color:var(--txt-dim);margin-top:4px;}
+
+  /* 成功率环 */
+  .ring-wrap{display:flex;align-items:center;gap:20px;}
+  .ring{position:relative;width:128px;height:128px;flex:none;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .ctr{position:absolute;inset:0;display:grid;place-items:center;text-align:center;}
+  .ring .ctr b{font-size:28px;font-weight:700;}
+  .ring .ctr s{display:block;font-size:11px;color:var(--txt-dim);text-decoration:none;margin-top:2px;}
+  .ring-note{font-size:13px;color:var(--txt-dim);line-height:1.6;}
+  .ring-note b{color:var(--txt);font-weight:600;}
+
+  /* 今日待续 列表 */
+  .todo{display:flex;flex-direction:column;gap:10px;}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);transition:transform .4s var(--ease);}
+  .row:hover{transform:translateY(-2px);}
+  .ava{width:42px;height:42px;border-radius:14px;flex:none;display:grid;place-items:center;font-weight:700;color:#1a1020;
+    background:linear-gradient(145deg,var(--gold),var(--ember-1));}
+  .row .who{flex:1;min-width:0;}
+  .row .who b{font-size:15px;font-weight:600;display:block;}
+  .row .who s{font-size:12px;color:var(--ember-2);text-decoration:none;}
+  .btn{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--glass-stroke);
+    background:rgba(255,255,255,.08);color:var(--txt);cursor:pointer;backdrop-filter:blur(10px);transition:.3s var(--ease);}
+  .btn.done{background:linear-gradient(135deg,rgba(91,229,154,.25),rgba(91,229,154,.1));border-color:rgba(91,229,154,.4);color:#bff7d6;}
+  .btn:hover{transform:scale(1.04);}
+
+  /* 火花好友 网格 */
+  .friends{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;}
+  .fcard{text-align:center;padding:16px 8px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);position:relative;overflow:hidden;}
+  .flame{font-size:26px;}
+  .fcard b{display:block;font-size:20px;font-weight:700;margin-top:6px;}
+  .fcard s{font-size:11px;color:var(--txt-dim);text-decoration:none;}
+  .fcard .lv{position:absolute;top:8px;right:8px;font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(255,93,115,.2);border:1px solid rgba(255,93,115,.35);color:#ffc2cc;}
+
+  /* 日历热力 */
+  .heat{display:grid;grid-template-columns:repeat(14,1fr);gap:5px;}
+  .h{aspect-ratio:1;border-radius:5px;background:rgba(255,255,255,.07);}
+  .h.on{background:linear-gradient(135deg,var(--ember-1),var(--ember-2));box-shadow:0 0 8px rgba(255,93,115,.5);}
+  .h.low{background:linear-gradient(135deg,rgba(255,138,61,.5),rgba(255,93,115,.4));}
+  .heat-legend{margin-top:12px;font-size:12px;color:var(--txt-dim);display:flex;gap:14px;align-items:center;}
+  .heat-legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;}
+
+  /* 文案卡 */
+  .draft textarea{width:100%;height:84px;resize:none;border-radius:16px;padding:14px;font-size:14px;line-height:1.6;
+    color:var(--txt);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);outline:none;font-family:inherit;}
+  .draft textarea:focus{border-color:rgba(255,212,121,.5);}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .tag{font-size:12px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--txt-dim);}
+  .tag b{color:var(--gold);font-weight:600;}
+  .draft .acts{display:flex;gap:10px;margin-top:14px;}
+
+  footer{margin-top:26px;text-align:center;color:var(--txt-dim);font-size:12px;line-height:1.7;}
+  footer b{color:rgba(255,212,121,.8);font-weight:600;}
+
+  @media (max-width:760px){
+    .span4,.span5,.span6,.span7,.span8,.span12{grid-column:span 12;}
+    .heat{grid-template-columns:repeat(10,1fr);}
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">🔥</div>
+        <div>
+          <h1>火花守护</h1>
+          <p>SparkKeeper · 抖音火花自动守护</p>
+        </div>
+      </div>
+      <div class="status">
+        <span class="pill"><span class="dot"></span> 引擎在线</span>
+        <span class="date">8月22日 周六</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 今日概览 -->
+      <section class="glass card span5">
+        <h2><span class="ico">📊</span> 今日概览</h2>
+        <div class="stats">
+          <div class="stat"><div class="n">12</div><div class="l">守护中</div></div>
+          <div class="stat"><div class="n">8</div><div class="l">今日已续</div></div>
+          <div class="stat"><div class="n">23</div><div class="l">最长连续</div></div>
+        </div>
+      </section>
+
+      <!-- 成功率环 -->
+      <section class="glass card span7">
+        <h2><span class="ico">🎯</span> 守护成功率（近30天）</h2>
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg width="128" height="128" viewBox="0 0 128 128">
+              <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/>
+              <circle cx="64" cy="64" r="54" fill="none" stroke="url(#g)" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="27.1"/>
+              <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffd479"/><stop offset="1" stop-color="#ff5d73"/></linearGradient></defs>
+            </svg>
+            <div class="ctr"><b>92%</b><s>稳定</s></div>
+          </div>
+          <div class="ring-note">本月仅 <b>2 天</b> 因登录态过期未完成，已通过推送提醒你手动补发。<br>开启 <b>自动补发</b> 后可由引擎在重登后自动补齐。</div>
+        </div>
+      </section>
+
+      <!-- 今日待续 -->
+      <section class="glass card span7">
+        <h2><span class="ico">⏳</span> 今日待续</h2>
+        <div class="todo">
+          <div class="row"><div class="ava">小</div><div class="who"><b>小雨同学</b><s>距熄灭 6小时</s></div><button class="btn">去发</button></div>
+          <div class="row"><div class="ava">阿</div><div class="who"><b>阿杰</b><s>距熄灭 9小时</s></div><button class="btn">去发</button></div>
+          <div class="row"><div class="ava">林</div><div class="who"><b>林深</b><s>已续 · 18:42</s></div><button class="btn done">已发</button></div>
+          <div class="row"><div class="ava">柚</div><div class="who"><b>柚子</b><s>已续 · 19:05</s></div><button class="btn done">已发</button></div>
+        </div>
+      </section>
+
+      <!-- 火花好友 -->
+      <section class="glass card span5">
+        <h2><span class="ico">✨</span> 火花好友</h2>
+        <div class="friends">
+          <div class="fcard"><span class="lv">挚友</span><div class="flame">🔥</div><b>128</b><s>天</s></div>
+          <div class="fcard"><span class="lv">聊愈</span><div class="flame">🌟</div><b>64</b><s>天</s></div>
+          <div class="fcard"><div class="flame">🔥</div><b>23</b><s>天</s></div>
+          <div class="fcard"><div class="flame">🔥</div><b>11</b><s>天</s></div>
+          <div class="fcard"><div class="flame">🔥</div><b>7</b><s>天</s></div>
+          <div class="fcard"><div class="flame">💤</div><b>3</b><s>天·危</s></div>
+        </div>
+      </section>
+
+      <!-- 日历热力 -->
+      <section class="glass card span7">
+        <h2><span class="ico">🗓️</span> 续火日历</h2>
+        <div class="heat" id="heat"></div>
+        <div class="heat-legend">
+          <span><i style="background:rgba(255,255,255,.07)"></i>未发</span>
+          <span><i style="background:linear-gradient(135deg,rgba(255,138,61,.5),rgba(255,93,115,.4))"></i>断更</span>
+          <span><i style="background:linear-gradient(135deg,#ff8a3d,#ff5d73)"></i>已续</span>
+        </div>
+      </section>
+
+      <!-- 今日文案 -->
+      <section class="glass card span5 draft">
+        <h2><span class="ico">💬</span> 今日建议文案</h2>
+        <textarea readonly>小雨同学，周末快乐呀～今天天气超好，有没有出去逛逛？😊</textarea>
+        <div class="tags">
+          <span class="tag">昵称 <b>小雨同学</b></span>
+          <span class="tag">星期 <b>周六</b></span>
+          <span class="tag">天气 <b>晴</b></span>
+        </div>
+        <div class="acts">
+          <button class="btn">换一条</button>
+          <button class="btn">复制</button>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      概念稿 · 非功能代码 ｜ 设计语言：<b>Apple iOS 26 液态毛玻璃</b>（通透层叠 · 余烬暖光 · 镜面高光）<br>
+      此为讨论用预览，正式实现将于需求锁定后进入对抗性编码阶段。
+    </footer>
+  </div>
+
+<script>
+  // 生成日历热力（70格示意）
+  const heat=document.getElementById('heat');
+  for(let i=0;i<70;i++){
+    const d=document.createElement('div');
+    const r=Math.random();
+    d.className='h'+(r>0.78?'on':r<0.12?'low':'');
+    heat.appendChild(d);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# ===== 运行时生成数据（含加密凭证，绝不入库）=====
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+server/public/
+web/dist/
+
+# ===== 凭证与环境 =====
+.env
+.env.local
+*.enc.json
+credentials/
+storage_state.json
+
+# ===== 依赖与构建 =====
+node_modules/
+server/node_modules/
+web/node_modules/
+dist/
+build/
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+.DS_Store
+*.swp
+coverage/
+
+# ===== 测试残留（防 data-t8 这类变体泄漏）=====
+data-*/

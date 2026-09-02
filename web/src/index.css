@@ -1,0 +1,48 @@
+@import './lib/glass.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Segoe UI', sans-serif;
+  color: #f6f1ee;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+  /* 暖暮色调（原 #0b0712 偏蓝紫，会让白色半透边框折出冷蓝光，视觉上像「蓝框」） */
+  background: #100c0f;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 40px);
+}
+
+.grid-12 {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(12, 1fr);
+}
+.span4 { grid-column: span 4; }
+.span5 { grid-column: span 5; }
+.span6 { grid-column: span 6; }
+.span7 { grid-column: span 7; }
+.span8 { grid-column: span 8; }
+.span12 { grid-column: span 12; }
+
+@media (max-width: 760px) {
+  .span4, .span5, .span6, .span7, .span8, .span12 { grid-column: span 12; }
+}
