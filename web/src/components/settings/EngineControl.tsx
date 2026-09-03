@@ -89,6 +89,37 @@ export function EngineControl({ health, onHealthChange, onDashboardChange }: Eng
 
   return (
     <GlassPanel title="引擎控制" icon="🎛️">
+      {/* 运行模式（只读，防止误以为是开关）：mock=演示不发真实消息；douyin=真实发送 */}
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          padding: '6px 14px',
+          borderRadius: 999,
+          fontSize: 12.5,
+          marginBottom: 14,
+          fontWeight: 600,
+          ...(health?.platform === 'douyin'
+            ? {
+                color: '#ff8f9f',
+                background: 'rgba(255,93,115,.12)',
+                border: '1px solid rgba(255,93,115,.35)',
+              }
+            : {
+                color: 'var(--txt-dim)',
+                background: 'rgba(255,255,255,.05)',
+                border: '1px solid rgba(255,255,255,.12)',
+              }),
+        }}
+        title={
+          health?.platform === 'douyin'
+            ? '当前是真实抖音模式：发送会真实发出私信。切换模式需改 server/data/config.json 的 platform 字段后重启后端'
+            : '当前是演示（mock）模式：发送走模拟、不会碰真实账号。切换模式需改 server/data/config.json 的 platform 字段后重启后端'
+        }
+      >
+        {health?.platform === 'douyin' ? '🔴 真实模式（抖音）· 会真发私信' : '🟢 演示模式（mock）· 不发真实消息'}
+      </div>
       <div className="flex gap-2 flex-wrap">
         {paused ? (
           <button

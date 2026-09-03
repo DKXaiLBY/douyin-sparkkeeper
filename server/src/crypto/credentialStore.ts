@@ -97,6 +97,15 @@ export class CredentialStore {
     return this.unlocked;
   }
 
+  /** 是否已设置过口令（verifier 存在）。首次使用时前端据此提示「请设置你自己的口令」。 */
+  hasVerifier(): boolean {
+    try {
+      return existsSync(this.verifierPath());
+    } catch {
+      return false;
+    }
+  }
+
   /** 不持久化解锁状态，仅校验口令是否正确。 */
   verifyPassphrase(passphrase: string): boolean {
     this.ensureDir();

@@ -63,7 +63,7 @@ SparkKeeper 想解决的是后面那一半：**让你看得见、管得住**。
 ## 🚀 30 秒上手
 
 <details>
-<summary><b>方式一：Docker（最省事）</b></summary>
+<summary><b>方式一：Docker（需要你本机已装 Docker）</b></summary>
 
 ```bash
 git clone https://github.com/DKXaiLBY/SparkKeeper.git
@@ -71,6 +71,10 @@ cd SparkKeeper
 docker compose up -d --build
 # 打开 http://localhost:3000
 ```
+
+> ⚠️ **诚实说明**：Docker 这条路径**未经过本项目充分实测**（开发环境没有 Docker），
+> 可能存在未发现的问题。**推荐用下方的本机运行方式**（那条路径是完整验证过的）。
+> 如果你用 Docker 跑通了、或修好了其中的问题，非常欢迎提 PR —— 感谢！
 
 </details>
 

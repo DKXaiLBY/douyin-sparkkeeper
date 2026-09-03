@@ -59,7 +59,13 @@ export const api = {
 
   credentials: {
     status: () =>
-      request<{ imported: boolean; unlocked: boolean; count: number }>('/credentials/status'),
+      request<{
+        imported: boolean;
+        unlocked: boolean;
+        /** false = 首次使用（输入的任何口令都会成为新口令），据此提示「请设置你自己的口令」。 */
+        hasVerifier?: boolean;
+        count: number;
+      }>('/credentials/status'),
     importCredential: (storageState: string, passphrase: string, expiresAt?: string) =>
       request<{ id: string }>('/credentials/import', {
         method: 'POST',

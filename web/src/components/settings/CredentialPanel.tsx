@@ -54,7 +54,12 @@ export function CredentialPanel() {
   /** 口令明文/密文切换（小眼睛）。 */
   const [showPass, setShowPass] = useState(false);
   const [msg, setMsg] = useState<string>('');
-  const [status, setStatus] = useState<{ imported: boolean; unlocked: boolean } | null>(null);
+  const [status, setStatus] = useState<{
+    imported: boolean;
+    unlocked: boolean;
+    /** false = 首次使用（输入的任何口令都会成为新口令）。 */
+    hasVerifier?: boolean;
+  } | null>(null);
 
   // ---- 扫码登录状态 ----
   const [qrState, setQrState] = useState<QrLoginState | null>(null);
@@ -318,6 +323,26 @@ export function CredentialPanel() {
       </div>
 
       {/* ---------- 加密口令（扫码与手动导入共用） ---------- */}
+      {status && !status.unlocked && status.hasVerifier === false && (
+        <div
+          style={{
+            padding: '10px 14px',
+            marginBottom: 14,
+            borderRadius: 12,
+            background: 'rgba(255,212,121,.1)',
+            border: '1px solid rgba(255,212,121,.4)',
+            color: '#ffd479',
+            fontSize: 12.5,
+            lineHeight: 1.7,
+          }}
+        >
+          🔑 <b>第一次使用：在这里设置你自己的口令</b>
+          <br />
+          下方输入框填什么，什么就是你的保险库口令（登录凭证靠它加密保护，忘记无法找回）。
+          <br />
+          如果输入框里带出了旧口令，请<b>先清空再输入新口令</b>。
+        </div>
+      )}
       <div className="field">
         <label>
           加密口令

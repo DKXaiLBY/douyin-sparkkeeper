@@ -36,7 +36,7 @@ export function ConsentGate({ children }: ConsentGateProps) {
     <div className="ob-mask">
       <div className="ob-card">
         <div style={{ fontSize: 13, color: 'var(--txt-faint)', marginBottom: 10 }}>
-          使用前必读 · 火花守护 SparkKeeper
+          使用前必读 · 火花守护 SparkKeeper · v1.0.0
         </div>
         <h2 className="ob-title">⚠️ 风险与免责声明</h2>
         <div className="ob-desc" style={{ marginBottom: 16 }}>
@@ -50,7 +50,13 @@ export function ConsentGate({ children }: ConsentGateProps) {
             <li>本项目仅用于<b>技术研究和个人自用</b>，严禁用于商业用途、批量营销、多账号矩阵运营、对外提供服务。</li>
             <li>本工具<b>不绕过验证码、不破解、不逆向</b>，只用浏览器自动化模拟人工操作官方网页版；检测到验证码会主动暂停并提醒。</li>
             <li>你的登录凭证与全部数据<b>只保存在本机</b>，不上传任何服务器。</li>
+            <li>
+              <b>使用即表示已阅读并同意本免责声明</b>；如不同意，请立即停止使用并删除本项目。
+            </li>
           </ol>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--txt-faint)' }}>
+            完整条款（含降低风险的具体做法、适用边界、商标说明）见项目根目录 <b>README.md</b>。
+          </div>
         </div>
         <div className="ob-actions">
           <button className="ob-skip" onClick={() => setRefused(true)}>

@@ -56,10 +56,14 @@ export class MockAdapter implements PlatformAdapter {
     return { ok: true };
   }
 
-  /** Mock：返回固定假会话，供前端联调「好友自动提取」。 */
+  /**
+   * Mock：返回虚构演示会话，供前端联调「好友自动提取」与 README 截图。
+   * ⚠️ 必须用「一眼假的通用网名」——截图会公开到 GitHub，绝不能出现任何可能
+   *    对应真实用户的昵称（曾因演示数据疑似来自真实会话被标记为隐私风险）。
+   */
   async listConversations(): Promise<ConversationSummary[]> {
     await new Promise((r) => setTimeout(r, this.opts.latencyMs));
-    return [{ title: '小雨同学' }, { title: '阿凯' }, { title: '测试号' }];
+    return ['星星', '阿茶', '北北', '小满', '图图'].map((title) => ({ title }));
   }
 
   async close(): Promise<void> {

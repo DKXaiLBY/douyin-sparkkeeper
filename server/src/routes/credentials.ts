@@ -21,6 +21,8 @@ export function credentialsRouter(ctx: AppContext): Router {
         data: {
           imported: creds.length > 0,
           unlocked: ctx.credentialStore.isUnlocked(),
+          /** 是否已设置过保险库口令（false = 首次使用，输入任何口令都会成为新口令）。 */
+          hasVerifier: ctx.credentialStore.hasVerifier(),
           count: creds.length,
         },
       });

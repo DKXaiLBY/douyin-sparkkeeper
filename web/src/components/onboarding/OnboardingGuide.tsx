@@ -22,7 +22,7 @@ interface GuideStep {
 }
 
 /**
- * 首次引导：扫码登录 → 添加好友 → 完成。
+ * 首次引导：扫码登录 → 添加好友 → 完成（含使用与配置要点）。
  *
  * 两条硬规则：
  * 1. 已完成的步骤会被跳过（按 hasCredential / hasFriends 生成步骤列表）；
@@ -43,7 +43,7 @@ export function OnboardingGuide({
       : [
           {
             title: '扫码登录',
-            desc: '点下方按钮进入「设置」，在「凭证保险库」里点「扫码登录」，用抖音 App 扫一下。\n登录凭证只加密存在你自己电脑上，不上传任何服务器。',
+            desc: '点下方按钮进入「设置 → 凭证保险库」，点「扫码登录」用抖音 App 扫一下。\n登录凭证只加密存在你自己电脑上，不上传任何服务器。\n如果没设过口令，扫码时填的口令就是你的保险库口令——记住它，忘了无法找回。',
             action: '去扫码登录',
             target: 'settings' as const,
           },
@@ -53,14 +53,14 @@ export function OnboardingGuide({
       : [
           {
             title: '添加要守护的好友',
-            desc: '回到「仪表盘」，在「火花好友」里点「＋ 添加」，填昵称和对方在抖音会话里显示的名字。\n建议先加 1 位，跑通了再加其他人。',
+            desc: '回到「仪表盘」，在「火花好友」里点「＋ 添加」。\n可以直接手填，或点「从抖音拉取好友」一键勾选你的会话列表。\n建议先加 1 位，跑通了再加其他人。',
             action: '去添加好友',
             target: 'dashboard' as const,
           },
         ]),
     {
-      title: '完成！🎉',
-      desc: '之后每天 20:00 左右会自动给好友发一条消息续火花。\n你只需要：偶尔回仪表盘看一眼，收到异常提醒时处理一下。',
+      title: '完成！🎉 接下来它会自己跑',
+      desc: '之后每天会在你设置的错峰时段（默认 19–23 点）内随机挑一个时刻，自动给好友发一条消息续火花——不固定时间，行为更像真人。\n\n日常你只需要三件事：\n1️⃣ 偶尔回仪表盘看看「今日待续」和热力图\n2️⃣ 顶部铃铛响了去处理（掉线 / 验证码 / 发送失败）\n3️⃣ 想调节奏去「设置」：安全模式（发送上限/时段）、通知渠道、发送文案',
       action: '开始使用',
       target: null,
     },
@@ -97,6 +97,12 @@ export function OnboardingGuide({
         </p>
 
         <div className="ob-actions">
+          {/* 上一步：误点「下一步」也能回头，不用重新清 localStorage 才能重看 */}
+          {step > 0 && (
+            <button className="ob-skip" onClick={() => setStep((v) => Math.max(0, v - 1))}>
+              上一步
+            </button>
+          )}
           <button className="ob-skip" onClick={onDone}>
             跳过引导
           </button>
