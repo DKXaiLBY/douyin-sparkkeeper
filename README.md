@@ -72,8 +72,10 @@ docker compose up -d --build
 # 打开 http://localhost:3000
 ```
 
-> ⚠️ **诚实说明**：Docker 这条路径**未经过本项目充分实测**（开发环境没有 Docker），
-> 可能存在未发现的问题。**推荐用下方的本机运行方式**（那条路径是完整验证过的）。
+> 📌 **诚实说明**：Docker 这条路径**做过静态审查并修复了已知问题**（缺 `.dockerignore` 会把含凭证的
+> `server/data/` 打进镜像、容器内缺少 Playwright/Chromium 导致抖音模式不可用），
+> 但**开发者的开发环境没有 Docker，因此未做真机运行验证**。
+> **推荐优先用下方的本机运行方式**（那条路径是完整验证过的）。
 > 如果你用 Docker 跑通了、或修好了其中的问题，非常欢迎提 PR —— 感谢！
 
 </details>
@@ -96,6 +98,13 @@ npm run dev:web      # 终端 2：前端 :5173
 3. 完成 ✅
 
 </details>
+
+> ⚠️ **要用真实抖音模式，必须先装 Playwright**（只玩 mock 演示模式则不需要）：
+> ```bash
+> npm i playwright && npx playwright install chromium
+> ```
+> 项目对它是**按需加载**，所以不装也能正常跑演示；但不装的话——扫码能成功、
+> **发送时会报「未安装 playwright」**。提前装好，别等到发送失败才发现。
 
 > Windows 用户也可以直接双击 `启动.bat`（自动装依赖、起服务、开浏览器），`停止.bat` 关闭。
 

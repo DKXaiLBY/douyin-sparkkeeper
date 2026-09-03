@@ -18,7 +18,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# 系统依赖：better-sqlite3 预编译二进制已含；Playwright 可选
+# 系统依赖：Playwright(Chromium) 运行所需；ca-certificates 供 HTTPS 请求
+# 说明：better-sqlite3 在 node:20-bookworm-slim 上有预编译二进制，无需 build-essential
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates \
   && rm -rf /var/lib/apt/lists/*
@@ -26,6 +27,15 @@ RUN apt-get update \
 # 后端依赖
 COPY server/package.json server/package-lock.json* ./server/
 RUN cd server && npm install --omit=dev --no-audit --no-fund
+
+# ---- Playwright + Chromium ----
+# 项目对 playwright 是「按需加载」（DouyinWebAdapter 里动态 import），不在 package.json 里声明，
+# 因此 mock 模式零负担；但**抖音模式必须有真实浏览器**才能发消息，容器里要显式装好，
+# 否则登录后会报「未安装 playwright」。
+# 两步都不能少：先装 npm 包（保证运行时 import 得到），再装浏览器二进制（--with-deps 带系统库）。
+RUN cd server && npm install playwright@1.49.1 --no-audit --no-fund
+RUN cd server && npx playwright install --with-deps chromium \
+  && rm -rf /root/.npm/_cacache /root/.cache/ms-playwright/*.tar.gz
 
 # 后端源码
 COPY server/ ./server/

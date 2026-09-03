@@ -1,0 +1,46 @@
+# ============================================================
+# Docker 构建上下文排除清单
+#
+# 目的有二：
+# 1) 减小构建上下文、加快构建（本地 node_modules 动辄几百 MB）
+# 2) 【安全】绝不能把运行时数据打进镜像层 —— server/data 下有数据库与
+#    加密凭证，一旦进镜像且被 push 到公开仓库，等于泄露凭证。
+# ============================================================
+
+# ---- 依赖与构建产物（镜像内会重新安装 / 重新构建）----
+node_modules/
+**/node_modules/
+server/public/
+web/dist/
+
+# ---- 运行时数据：含数据库与加密凭证，严禁入镜像 ----
+server/data/
+data/
+data-*/
+**/data-t*/
+credentials/
+**/credentials/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.enc.json
+storage_state.json
+screenshots/
+**/page-diagnose.*
+
+# ---- 版本控制与开发辅助文件 ----
+.git/
+.gitignore
+.qa-tmp/
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.verify.mjs
+coverage/
+*.log
+logs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
