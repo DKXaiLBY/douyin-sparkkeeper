@@ -77,6 +77,8 @@ async function main(): Promise<void> {
       startHour,
       endHour,
       jobFn,
+      // 每日随机时刻落盘：重启后同一天复用，避免重选导致补发/漏发
+      dataDir: config.dataDir,
     });
   } else {
     ctx.scheduler = new Scheduler(config.cron, jobFn);
