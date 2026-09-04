@@ -7,6 +7,8 @@
  * - 窗口 [19,22) 生成的时刻必定 ≥ 1140 分钟（19:00），因此把当前时间定在 03:20（200 分钟）
  *   可以区分「复用旧时刻」（会触发）与「重新随机」（不会触发）：
  *   一旦重选，时刻 ≥1140 > 200，本次就不会执行 jobFn。
+ *
+ * 日期口径：所有日期都用「今天/昨天」的动态本地串，避免测试过期。
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -21,6 +23,25 @@ function localDateStr(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/** 「今天 HH:MM」用于 setSystemTime，跟随真实日期前进。 */
+function todayAt(h: number, m: number): Date {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+/** 「今天」YYYY-MM-DD。 */
+function todayStr(): string {
+  return localDateStr(new Date());
+}
+
+/** 「昨天」YYYY-MM-DD。 */
+function yesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return localDateStr(d);
 }
 
 interface StateFile {
@@ -69,8 +90,9 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
   it('同日重启：复用已保存的时刻，不再重新随机', () => {
     // 当前 03:20（第 200 分钟）。窗口 [19,22) 重新随机会落在 [1140,1320)，
     // 那时 200 < 1140 → 不会触发；只有复用了保存的 100 才会触发。
-    vi.setSystemTime(new Date('2026-03-10T03:20:00'));
-    writeState({ date: '2026-03-10', startHour: 19, endHour: 22, minute: 100, firedDate: '' });
+    const today = todayStr();
+    vi.setSystemTime(todayAt(3, 20));
+    writeState({ date: today, startHour: 19, endHour: 22, minute: 100, firedDate: '' });
 
     const job = vi.fn(async () => undefined);
     runOnce({ startHour: 19, endHour: 22, dataDir }, job);
@@ -78,12 +100,13 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
     expect(job).toHaveBeenCalledTimes(1);
     // 复用而非覆盖
     expect(readState().minute).toBe(100);
-    expect(readState().date).toBe('2026-03-10');
+    expect(readState().date).toBe(today);
   });
 
   it('跨天：丢弃昨天的时刻，重新随机并覆盖保存', () => {
-    vi.setSystemTime(new Date('2026-03-10T03:20:00'));
-    writeState({ date: '2026-03-09', startHour: 19, endHour: 22, minute: 100, firedDate: '' });
+    const today = todayStr();
+    vi.setSystemTime(todayAt(3, 20));
+    writeState({ date: yesterdayStr(), startHour: 19, endHour: 22, minute: 100, firedDate: '' });
 
     const job = vi.fn(async () => undefined);
     runOnce({ startHour: 19, endHour: 22, dataDir }, job);
@@ -91,21 +114,22 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
     // 新时刻落在今天窗口内 → 03:20 未到点，不触发
     expect(job).not.toHaveBeenCalled();
     const saved = readState();
-    expect(saved.date).toBe('2026-03-10');
+    expect(saved.date).toBe(today);
     expect(saved.minute).toBeGreaterThanOrEqual(19 * 60);
     expect(saved.minute).toBeLessThan(22 * 60);
   });
 
   it('文件损坏 / 字段非法 / 数值越界：容错回退为重新随机', () => {
-    vi.setSystemTime(new Date('2026-03-10T03:20:00'));
+    const today = todayStr();
+    vi.setSystemTime(todayAt(3, 20));
     const badPayloads = [
       '{ 这不是 JSON',
       'null',
       '[]',
-      JSON.stringify({ date: '2026-03-10', startHour: 19, endHour: 22, minute: 'abc' }),
-      JSON.stringify({ date: '2026-03-10', startHour: 19, endHour: 22, minute: 9999 }),
-      JSON.stringify({ date: '2026-03-10', startHour: 19, endHour: 22, minute: -1 }),
-      JSON.stringify({ date: '2026-03-10', startHour: 19, endHour: 22, minute: 12.5 }),
+      JSON.stringify({ date: today, startHour: 19, endHour: 22, minute: 'abc' }),
+      JSON.stringify({ date: today, startHour: 19, endHour: 22, minute: 9999 }),
+      JSON.stringify({ date: today, startHour: 19, endHour: 22, minute: -1 }),
+      JSON.stringify({ date: today, startHour: 19, endHour: 22, minute: 12.5 }),
     ];
 
     for (const payload of badPayloads) {
@@ -115,7 +139,7 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
       expect(() => runOnce({ startHour: 19, endHour: 22, dataDir }, job)).not.toThrow();
       expect(job).not.toHaveBeenCalled();
       const saved = readState();
-      expect(saved.date).toBe('2026-03-10');
+      expect(saved.date).toBe(today);
       expect(saved.minute).toBeGreaterThanOrEqual(19 * 60);
       expect(saved.minute).toBeLessThan(22 * 60);
     }
@@ -123,17 +147,18 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
 
   it('今天已触发后重启：不再重复执行一次', () => {
     // 窗口 [19,20) → 时刻必定 ≤ 19:59；当前 20:30 一定已过该时刻 → 首次即触发
-    vi.setSystemTime(new Date('2026-03-10T20:30:00'));
+    const today = todayStr();
+    vi.setSystemTime(todayAt(20, 30));
     const job = vi.fn(async () => undefined);
     runOnce({ startHour: 19, endHour: 20, dataDir }, job);
     expect(job).toHaveBeenCalledTimes(1);
 
     const firstSaved = readState();
-    expect(firstSaved.date).toBe('2026-03-10');
-    expect(firstSaved.firedDate).toBe('2026-03-10');
+    expect(firstSaved.date).toBe(today);
+    expect(firstSaved.firedDate).toBe(today);
 
     // 模拟「服务重启」：新实例 + 时间推进一分钟，同一天内不应再触发
-    vi.setSystemTime(new Date('2026-03-10T20:31:00'));
+    vi.setSystemTime(todayAt(20, 31));
     const job2 = vi.fn(async () => undefined);
     runOnce({ startHour: 19, endHour: 20, dataDir }, job2);
 
@@ -143,8 +168,9 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
   });
 
   it('错峰窗口被修改：旧时刻失效，按新窗口重新随机', () => {
-    vi.setSystemTime(new Date('2026-03-10T03:20:00'));
-    writeState({ date: '2026-03-10', startHour: 19, endHour: 22, minute: 100, firedDate: '' });
+    const today = todayStr();
+    vi.setSystemTime(todayAt(3, 20));
+    writeState({ date: today, startHour: 19, endHour: 22, minute: 100, firedDate: '' });
 
     const job = vi.fn(async () => undefined);
     runOnce({ startHour: 8, endHour: 9, dataDir }, job);
@@ -161,7 +187,7 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
     // dataDir 指向一个文件而非目录 → mkdir/写入都会失败
     const notADir = join(dataDir, 'not-a-dir.txt');
     writeFileSync(notADir, 'x', 'utf-8');
-    vi.setSystemTime(new Date('2026-03-10T20:30:00'));
+    vi.setSystemTime(todayAt(20, 30));
 
     const job = vi.fn(async () => undefined);
     // 窗口 [0,20) → 时刻 ≤ 19:59，20:30 一定已过 → 应正常触发
@@ -171,7 +197,7 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
   });
 
   it('未配置 dataDir：保持纯内存行为，不落盘也不报错', () => {
-    vi.setSystemTime(new Date('2026-03-10T20:30:00'));
+    vi.setSystemTime(todayAt(20, 30));
     const job = vi.fn(async () => undefined);
     runOnce({ startHour: 19, endHour: 20 }, job);
     expect(job).toHaveBeenCalledTimes(1);
@@ -179,7 +205,8 @@ describe('RandomScheduler 每日随机时刻持久化', () => {
   });
 
   it('持久化文件名与日期口径：本地日期串与 localDateStr 一致', () => {
-    const now = new Date('2026-03-10T23:50:00'); // 临近跨天，验证用的是本地日期而非 UTC
+    // 临近跨天（23:50）验证用的是本地日期而非 UTC；日期动态取「今天」避免过期。
+    const now = todayAt(23, 50);
     vi.setSystemTime(now);
     writeState({ date: localDateStr(now), startHour: 19, endHour: 22, minute: 100, firedDate: '' });
     const job = vi.fn(async () => undefined);
