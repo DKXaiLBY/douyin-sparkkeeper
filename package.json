@@ -19,7 +19,7 @@
     "docker:down": "docker compose down"
   },
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",

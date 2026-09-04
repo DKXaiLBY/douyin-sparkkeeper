@@ -3,6 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # 网络受限时可选加速（默认空=官方源），PowerShell 示例：
+      #   $env:APT_MIRROR="mirrors.tuna.tsinghua.edu.cn"; docker compose up -d --build
+      args:
+        APT_MIRROR: ${APT_MIRROR:-}
+        PLAYWRIGHT_DOWNLOAD_HOST: ${PLAYWRIGHT_DOWNLOAD_HOST:-}
     image: sparkkeeper:latest
     container_name: sparkkeeper
     restart: unless-stopped
