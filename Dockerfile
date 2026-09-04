@@ -29,11 +29,13 @@ COPY server/package.json server/package-lock.json* ./server/
 RUN cd server && npm install --omit=dev --no-audit --no-fund
 
 # ---- Playwright + Chromium ----
-# 项目对 playwright 是「按需加载」（DouyinWebAdapter 里动态 import），不在 package.json 里声明，
-# 因此 mock 模式零负担；但**抖音模式必须有真实浏览器**才能发消息，容器里要显式装好，
-# 否则登录后会报「未安装 playwright」。
-# 两步都不能少：先装 npm 包（保证运行时 import 得到），再装浏览器二进制（--with-deps 带系统库）。
-RUN cd server && npm install playwright@1.49.1 --no-audit --no-fund
+# playwright 声明在 server/package.json 的 optionalDependencies（^1.62.1），
+# 上面 `npm install --omit=dev` 已按 package-lock.json 锁定安装 1.62.1。
+# 这里再显式装一遍是兜底：optional 依赖若拉取失败，npm 不会中断构建，
+# 避免容器里「静默缺 playwright」导致抖音模式登录后报错。
+# ⚠️ 版本号必须与 package.json / package-lock.json 保持一致（当前 1.62.1，
+#    与本地真机验证的版本一致）；日后升 playwright 时两处必须同步改。
+RUN cd server && npm install playwright@1.62.1 --no-audit --no-fund
 RUN cd server && npx playwright install --with-deps chromium \
   && rm -rf /root/.npm/_cacache /root/.cache/ms-playwright/*.tar.gz
 
