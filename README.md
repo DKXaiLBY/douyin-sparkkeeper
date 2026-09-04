@@ -6,7 +6,7 @@
 > 凭证本地加密、零遥测、开源可审计。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Node](https://img.shields.io/badge/Node-%E2%89%A520.11-339933?logo=node.js)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-%E2%89%A522-339933?logo=node.js)](https://nodejs.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-%E7%BD%91%E9%A1%B5%E8%87%AA%E5%8A%A8%E5%8C%96-45ba4b?logo=playwright)](https://playwright.dev/)
 [![平台](https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%20%2F%20macOS%20%2F%20Linux-blue)]()
 
@@ -72,11 +72,13 @@ docker compose up -d --build
 # 打开 http://localhost:3000
 ```
 
-> 📌 **诚实说明**：Docker 这条路径**做过静态审查并修复了已知问题**（缺 `.dockerignore` 会把含凭证的
-> `server/data/` 打进镜像、容器内缺少 Playwright/Chromium 导致抖音模式不可用），
-> 但**开发者的开发环境没有 Docker，因此未做真机运行验证**。
-> **推荐优先用下方的本机运行方式**（那条路径是完整验证过的）。
-> 如果你用 Docker 跑通了、或修好了其中的问题，非常欢迎提 PR —— 感谢！
+> ✅ **已真机验证**：Docker 路径已在 Docker Desktop（WSL2 后端）实测跑通——默认 mock 模式下容器启动、`/api/health` 健康检查、前端静态托管、`/data` 数据持久化均正常；镜像内已装 Chromium 供 douyin 真实模式使用（要求 Node 22 基础镜像）。
+>
+> **国内网络加速（可选）**：若构建时 apt 或浏览器下载很慢，可给 apt 换国内镜像源（默认仍为官方源，不影响其他用户）：
+> ```powershell
+> $env:APT_MIRROR="mirrors.tuna.tsinghua.edu.cn"; docker compose up -d --build
+> ```
+> 如果你在使用中改进了 Docker 配置，非常欢迎提 PR —— 感谢！
 
 </details>
 

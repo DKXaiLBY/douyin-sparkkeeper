@@ -23,7 +23,7 @@ $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeCmd) {
     Write-Line "  [错误] 没有检测到 Node.js"
     Write-Line ""
-    Write-Line "  本程序需要 Node.js 20.11 或更高版本才能运行。"
+    Write-Line "  本程序需要 Node.js 22 或更高版本才能运行。"
     Write-Line ""
     Write-Line "  解决办法："
     Write-Line "     1. 打开 https://nodejs.org/"
@@ -44,10 +44,10 @@ $major = 0; $minor = 0
 [void][int]::TryParse($parts[0], [ref]$major)
 if ($parts.Length -gt 1) { [void][int]::TryParse($parts[1], [ref]$minor) }
 
-if ($major -lt 20 -or ($major -eq 20 -and $minor -lt 11)) {
+if ($major -lt 22) {
     Write-Line "  [错误] 当前 Node.js 版本过低：v$nodeVer"
     Write-Line ""
-    Write-Line "  本程序需要 20.11 或更高版本，请到 https://nodejs.org/ 更新。"
+    Write-Line "  本程序需要 Node.js 22 或更高版本（better-sqlite3 要求），请到 https://nodejs.org/ 更新。"
     Write-Line ""
     $yn2 = Read-Host "  现在打开下载页面？(Y/N)"
     if ($yn2 -eq "Y" -or $yn2 -eq "y") { Start-Process "https://nodejs.org/" }

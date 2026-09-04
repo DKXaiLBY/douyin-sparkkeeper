@@ -28,7 +28,7 @@ echo ""
 if ! command -v node >/dev/null 2>&1; then
   echo "  [错误] 没有检测到 Node.js"
   echo ""
-  echo "  本程序需要 Node.js 20.11 或更高版本。"
+  echo "  本程序需要 Node.js 22 或更高版本。"
   echo "  请到 https://nodejs.org/ 下载安装（选 LTS 版本），然后重新运行本脚本。"
   echo ""
   exit 1
@@ -39,9 +39,9 @@ NODE_MAJOR=$(echo "$NODE_V" | cut -d. -f1)
 NODE_MINOR=$(echo "$NODE_V" | cut -d. -f2)
 NODE_MINOR=${NODE_MINOR:-0}
 
-if [ "$NODE_MAJOR" -lt 20 ] || { [ "$NODE_MAJOR" -eq 20 ] && [ "$NODE_MINOR" -lt 11 ]; }; then
+if [ "$NODE_MAJOR" -lt 22 ]; then
   echo "  [错误] 当前 Node.js 版本过低：v$NODE_V"
-  echo "  本程序需要 20.11 或更高版本，请到 https://nodejs.org/ 更新。"
+  echo "  本程序需要 Node.js 22 或更高版本（better-sqlite3 要求），请到 https://nodejs.org/ 更新。"
   echo ""
   exit 1
 fi
