@@ -7,6 +7,58 @@ import { HeatCalendar } from '@/components/dashboard/HeatCalendar.tsx';
 import { OnboardingGuide } from '@/components/onboarding/OnboardingGuide.tsx';
 import type { DueItem, HeatCell } from '@/api/types.ts';
 
+// SettingsPage 挂上去就会拉接口（useConfig / useDashboard，外加 CredentialPanel、
+// EngineControl 挂载即请求），jsdom 里没有真实后端，整体桩掉 api，只保留 config.get 的返回值。
+vi.mock('@/api/client.ts', () => {
+  const cfg = {
+    port: 8787,
+    dataDir: './data',
+    platform: 'douyin',
+    safetyMode: true,
+    safety: { enabled: true, dailyCap: 20, delayMinSec: 30, delayMaxSec: 120, staggerHours: [19, 23] },
+    llm: { enabled: false, provider: 'deepseek', baseUrl: '', model: '' },
+    notify: { channel: 'none' },
+    cron: '0 19 * * *',
+    sendMode: 'random',
+    weatherEnabled: false,
+    passphraseMinLen: 8,
+    content: { templates: ['今天也来续个火 🔥'] },
+  };
+  return {
+    ApiError: class ApiError extends Error {},
+    api: {
+      health: async () => ({ ok: true, credentialImported: false, friends: 0 }),
+      dashboard: async () => ({ friends: [], due: [], heatmap: [], todaySent: 0, longestStreak: 0 }),
+      config: { get: async () => cfg, update: async () => cfg },
+      friends: { list: async () => [], add: async () => ({}), remove: async () => ({}), pull: async () => [] },
+      credentials: {
+        status: async () => ({ imported: false, unlocked: false, platform: 'douyin' }),
+        qrStart: async () => ({ qrUrl: '', sessionId: '' }),
+        qrStatus: async () => ({ state: 'pending' }),
+        qrCancel: async () => ({}),
+        unlock: async () => ({ ok: true }),
+        verify: async () => ({ ok: true }),
+        relogin: async () => ({}),
+      },
+      run: {
+        now: async () => ({}),
+        dry: async () => ({}),
+        pause: async () => ({}),
+        resume: async () => ({}),
+      },
+      notifications: { test: async () => ({ ok: true }) },
+      settings: {
+        autostart: async () => ({ enabled: false }),
+        setAutostart: async () => ({ enabled: false }),
+      },
+    },
+  };
+});
+
+// SettingsPage 依赖上面的 mock，必须在 vi.mock 之后动态 import（vi.mock 会被提升到顶层，
+// 但 import 语句同样被提升，所以用 await import 确保在 mock 注册后再取模块）。
+const { SettingsPage } = await import('@/pages/SettingsPage.tsx');
+
 const noop = () => undefined;
 
 // vitest 配了 globals: false，@testing-library/react 的自动 cleanup 不会注册，
@@ -131,6 +183,47 @@ describe('续火热力图（3×10 主视图 + 完整日历弹窗）', () => {
     expect(container.querySelectorAll('.cal-modal').length).toBe(0);
   });
 
+  it('按 Esc 可关闭月历弹窗（键盘退出是点遮罩/按钮之外的第三条路）', () => {
+    render(<HeatCalendar heatmap={heatmap} />);
+    fireEvent.click(screen.getByText('查看完整日历'));
+    expect(document.body.querySelector('.cal-modal')).not.toBeNull();
+
+    // 键盘事件发生在 document 上（不是某个按钮），用 keyDown 派发到 document
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.body.querySelector('.cal-modal')).toBeNull();
+  });
+
+  it('弹窗关闭后移除 Esc 监听，不残留全局监听器', () => {
+    const removeSpy = vi.spyOn(document, 'removeEventListener');
+    try {
+      render(<HeatCalendar heatmap={heatmap} />);
+      fireEvent.click(screen.getByText('查看完整日历'));
+      fireEvent.keyDown(document, { key: 'Escape' });
+
+      // cleanup 里必须把 keydown 监听摘掉，否则每个弹窗都会往 document 上叠一层
+      const removed = removeSpy.mock.calls.filter(([type]) => type === 'keydown');
+      expect(removed.length).toBeGreaterThan(0);
+
+      // 再按一次 Esc 不应有任何反应（弹窗已关，也没残留监听去改一个已卸载的状态）
+      expect(() => fireEvent.keyDown(document, { key: 'Escape' })).not.toThrow();
+      expect(document.body.querySelector('.cal-modal')).toBeNull();
+    } finally {
+      removeSpy.mockRestore();
+    }
+  });
+
+  it('弹窗未打开时不响应 Esc', () => {
+    const addSpy = vi.spyOn(document, 'addEventListener');
+    try {
+      render(<HeatCalendar heatmap={heatmap} />);
+      // 没点「查看完整日历」→ 不应该挂任何 keydown 监听
+      expect(addSpy.mock.calls.filter(([type]) => type === 'keydown').length).toBe(0);
+      expect(document.body.querySelector('.cal-modal')).toBeNull();
+    } finally {
+      addSpy.mockRestore();
+    }
+  });
+
   it('不超过 30 天时不显示「查看完整日历」按钮', () => {
     render(<HeatCalendar heatmap={makeHeat(20)} />);
     expect(screen.queryByText('查看完整日历')).toBeNull();
@@ -239,5 +332,29 @@ describe('首次引导（OnboardingGuide）', () => {
     render(<OnboardingGuide {...base} hasCredential={false} hasFriends={false} onDone={onDone} />);
     fireEvent.click(screen.getByText('跳过引导'));
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('设置页：重新查看引导入口', () => {
+  it('底部常驻「重新查看引导」，点击回调 App（由 App 清标记并重弹引导）', async () => {
+    const onReplayOnboard = vi.fn();
+    render(<SettingsPage health={null} onHealthChange={noop} onReplayOnboard={onReplayOnboard} />);
+
+    // 底部入口要等 config 拉完才渲染（loading 期间是「加载中…」）
+    const btn = await screen.findByText(/重新查看引导/);
+    expect(onReplayOnboard).not.toHaveBeenCalled();
+
+    fireEvent.click(btn);
+    expect(onReplayOnboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('入口在 Tab 条外面，切到任何分类都还在（不用猜它藏在哪）', async () => {
+    render(<SettingsPage health={null} onHealthChange={noop} onReplayOnboard={noop} />);
+    await screen.findByText(/重新查看引导/);
+
+    for (const label of ['引擎', '账号', '安全', '通知', '文案']) {
+      fireEvent.click(screen.getByRole('tab', { name: new RegExp(label) }));
+      expect(screen.getByText(/重新查看引导/)).toBeTruthy();
+    }
   });
 });

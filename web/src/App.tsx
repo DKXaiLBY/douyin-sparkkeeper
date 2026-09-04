@@ -23,15 +23,36 @@ export default function App() {
   );
   /** 点「去操作」只临时关闭遮罩（不落盘），下次刷新按最新配置状态重新判断。 */
   const [snoozed, setSnoozed] = useState(false);
+  /**
+   * 用户主动点「重新查看引导」→ 强制显示一次。
+   *
+   * 为什么不能只清 localStorage 标记：showOnboard 还有 `!configured` 这一条，
+   * 已经配好凭证和好友的老用户清了标记也照样不弹，等于按钮点了没反应。
+   * 所以除了清标记，还要用这个一次性开关绕过 configured 判断，保证「点了就一定出现」。
+   */
+  const [onboardForced, setOnboardForced] = useState(false);
 
   const finishOnboard = useCallback(() => {
     localStorage.setItem(ONBOARD_KEY, '1');
     setOnboarded(true);
     setSnoozed(false);
+    setOnboardForced(false); // 强制标记是一次性的：引导结束后立即失效，不影响后续正常使用
   }, []);
 
   const snoozeOnboard = useCallback(() => {
     setSnoozed(true);
+    setOnboardForced(false);
+  }, []);
+
+  /**
+   * 设置页「重新查看引导」：清掉完成标记 + 置上强制开关，立刻重新弹引导。
+   * snoozed 也要清，否则上一次「去操作」留下的临时关闭会盖掉这次请求。
+   */
+  const replayOnboard = useCallback(() => {
+    localStorage.removeItem(ONBOARD_KEY);
+    setOnboarded(false);
+    setSnoozed(false);
+    setOnboardForced(true);
   }, []);
 
   const loadHealth = useCallback(async () => {
@@ -55,7 +76,9 @@ export default function App() {
   const hasFriends = (health?.friends ?? 0) > 0;
   const configured = hasCredential && hasFriends;
 
-  const showOnboard = healthLoaded && !onboarded && !snoozed && !configured;
+  // 强制开关优先：它绕开 onboarded / configured 两个判断，确保「重新查看引导」一定弹得出来。
+  const showOnboard =
+    healthLoaded && !snoozed && (onboardForced || (!onboarded && !configured));
 
   return (
     <ConsentGate>
@@ -68,7 +91,11 @@ export default function App() {
         {tab === 'dashboard' ? (
           <DashboardPage />
         ) : (
-          <SettingsPage health={health} onHealthChange={loadHealth} />
+          <SettingsPage
+            health={health}
+            onHealthChange={loadHealth}
+            onReplayOnboard={replayOnboard}
+          />
         )}
       </div>
       {showOnboard && (

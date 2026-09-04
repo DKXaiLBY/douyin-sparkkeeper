@@ -13,6 +13,8 @@ import type { SettingsTabDef } from '@/components/settings/SettingsTabs.tsx';
 interface SettingsPageProps {
   health: HealthStatus | null;
   onHealthChange: () => void;
+  /** 点设置页底部「重新查看引导」：由 App 清掉完成标记并强制重弹首次引导。 */
+  onReplayOnboard: () => void;
 }
 
 /**
@@ -31,7 +33,11 @@ const SETTINGS_TABS: readonly SettingsTabDef[] = [
 const DEFAULT_TAB = 'account';
 
 /** 设置页：分类 Tab 界面，一次只显示一类设置。 */
-export function SettingsPage({ health, onHealthChange }: SettingsPageProps) {
+export function SettingsPage({
+  health,
+  onHealthChange,
+  onReplayOnboard,
+}: SettingsPageProps) {
   const { config, loading, update } = useConfig();
   const { refresh } = useDashboard();
   const [tab, setTab] = useState<string>(DEFAULT_TAB);
@@ -65,6 +71,16 @@ export function SettingsPage({ health, onHealthChange }: SettingsPageProps) {
       <SettingsPane active={tab === 'template'}>
         <TemplatePanel config={config} update={update} />
       </SettingsPane>
+
+      {/* 「重新查看引导」放在 Tab 条**外面**：不管用户正停在哪个分类都能一眼看到，
+          不用去猜它藏在「引擎」还是「账号」里。引导只在首次自动弹一次，
+          之前想重看只能手动清 localStorage，这个入口把那步操作收进界面。 */}
+      <div className="settings-footer">
+        <span className="settings-footer-tip">错过了首次引导？</span>
+        <button type="button" className="settings-footer-link" onClick={onReplayOnboard}>
+          ↻ 重新查看引导
+        </button>
+      </div>
     </div>
   );
 }

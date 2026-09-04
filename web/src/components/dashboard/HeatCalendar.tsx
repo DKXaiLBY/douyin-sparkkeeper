@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GlassCard } from '@/components/layout/GlassCard.tsx';
 import type { HeatCell } from '@/api/types.ts';
@@ -91,6 +91,19 @@ export function HeatCalendar({ heatmap }: HeatCalendarProps) {
 
   const shiftMonth = (delta: number) =>
     setViewDate((v) => new Date(v.getFullYear(), v.getMonth() + delta, 1));
+
+  // Esc 关闭弹窗：只给这个月历弹窗加，键盘操作是它最自然的退出方式（点遮罩/关闭按钮之外第三条路）。
+  // 依赖里带 showModal —— 弹窗关着时根本不挂监听，关闭或组件卸载时 cleanup 移除，不会泄漏全局监听器。
+  // 注意：首次协议确认（ConsentGate）**不加** Esc，免责声明必须由用户显式点「同意」，不能让人一键跳过。
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e: KeyboardEvent): void => {
+      // 'Esc' 是老版 IE/Edge 的 key 值，现代浏览器统一给 'Escape'，两个都认。
+      if (e.key === 'Escape' || e.key === 'Esc') setShowModal(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [showModal]);
 
   return (
     <GlassCard span={12}>

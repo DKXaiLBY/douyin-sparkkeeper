@@ -413,6 +413,38 @@
 .settings-tab-icon { font-size: 14px; line-height: 1; }
 /* 面板容器：display:none 由 React 内联下发（见 SettingsPane） */
 
+/* 设置页底部条：常驻在 Tab 条之外，「重新查看引导」在任何分类下都可见。
+   样式刻意做淡（半透明底 + 小字），它是低频入口，不该抢各设置面板的视觉重心。 */
+.settings-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.settings-footer-tip { font-size: 12.5px; color: var(--txt-faint); }
+.settings-footer-link {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 5px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--gold);
+  background: rgba(255, 138, 61, 0.12);
+  border: 1px solid rgba(255, 138, 61, 0.3);
+  transition: 0.25s var(--ease);
+}
+.settings-footer-link:hover {
+  color: #fff;
+  background: rgba(255, 138, 61, 0.24);
+  border-color: rgba(255, 138, 61, 0.55);
+}
+
 /* 问号帮助：悬停显示解释（data-tip 内容）。橙色圆环一眼可辨，引导用户去悬停。
    面板 overflow:hidden 会裁掉向上弹出的提示，故统一向下弹 + 高 z-index 覆盖下方输入框。 */
 .help {
