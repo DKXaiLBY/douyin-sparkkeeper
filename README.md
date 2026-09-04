@@ -215,7 +215,7 @@ npm run dev:web      # 终端 2：前端 :5173
 | 加密 | Node 内置 `crypto`（AES-256-GCM + PBKDF2），零第三方依赖 |
 | 部署 | Docker 多阶段构建 / 本机直跑 |
 
-完整架构设计见 [architecture.md](./architecture.md)，生态与合规调研见 [research-report.md](./research-report.md)。
+完整架构设计见 [architecture.md](./architecture.md)，生态与合规调研见 [research-report.md](./research-report.md)，版本变更记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 
