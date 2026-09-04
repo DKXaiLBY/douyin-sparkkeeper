@@ -152,7 +152,15 @@ export class AppContext {
     }
   }
 
-  /** 首次运行填充示例好友，便于仪表盘即时可见（用户可随时删除）。 */
+  /**
+   * 首次运行填充示例好友与演示发送历史，便于仪表盘即时可见（用户可随时删除）。
+   *
+   * 昵称与 MockAdapter 内置演示会话（platforms/MockAdapter.ts）保持一致的安全昵称
+   * （星星/阿茶/北北/小满/图图），避免「看着像真实用户」的隐私观感。
+   * 同时为每个好友预置近 N=min(streakDays, 60) 天的成功发送记录，让首启后的仪表盘
+   * 呈现完整演示叙事：今日 5 位待续 + 热力图近几十天几乎全橙 + 成功率 ≈100%。
+   * 这些都是纯演示数据，不参与任何真实发送决策；已有数据时不会重复 seed（幂等）。
+   */
   seedDemoIfEmpty(): void {
     if (this.friendRepo.list().length > 0) return;
     const samples: Array<{
@@ -161,11 +169,11 @@ export class AppContext {
       streakDays: number;
       level: FriendLevel;
     }> = [
-      { nickname: '小雨同学', platformId: 'im_demo_xiaoyu', streakDays: 128, level: '挚友' },
-      { nickname: '阿杰', platformId: 'im_demo_ajie', streakDays: 64, level: '聊愈' },
-      { nickname: '林深', platformId: 'im_demo_linshen', streakDays: 23, level: '普通' },
-      { nickname: '柚子', platformId: 'im_demo_youzi', streakDays: 11, level: '普通' },
-      { nickname: '子墨', platformId: 'im_demo_zimo', streakDays: 3, level: '危险' },
+      { nickname: '星星', platformId: 'im_demo_xingxing', streakDays: 128, level: '挚友' },
+      { nickname: '阿茶', platformId: 'im_demo_acha', streakDays: 64, level: '聊愈' },
+      { nickname: '北北', platformId: 'im_demo_beibei', streakDays: 23, level: '普通' },
+      { nickname: '小满', platformId: 'im_demo_xiaoman', streakDays: 11, level: '普通' },
+      { nickname: '图图', platformId: 'im_demo_tutu', streakDays: 3, level: '危险' },
     ];
     const now = new Date();
     for (const s of samples) {
@@ -182,7 +190,41 @@ export class AppContext {
         createdAt: now.toISOString(),
       };
       this.friendRepo.create(friend);
+      this.seedSendHistory(friend.id, s.streakDays);
     }
-    log.info('seeded demo friends');
+    log.info('seeded demo friends (5) with send history');
+  }
+
+  /**
+   * 为单个演示好友补「发送历史」：从今天往前数 days 天（含）到昨天，每天一条 success=1 记录。
+   * - sent_at 落在北京时间 19:00–22:00（错峰发送的拟人化体现），并以 UTC 时间点落盘，
+   *   保证与仪表盘热力图按 UTC 日期取 substr(sent_at,1,10) 的口径一致、不错位。
+   * - 约 5% 的日期随机留白（不插记录）制造真实起伏；昨天（offset=1）必保底，
+   *   确保热力图末尾与成功率观感完整。
+   */
+  private seedSendHistory(friendId: string, streakDays: number): void {
+    const days = Math.min(streakDays, 60);
+    if (days <= 0) return;
+    const nowMs = Date.now();
+    for (let offset = days; offset >= 1; offset--) {
+      if (offset !== 1 && Math.random() < 0.05) continue;
+      const ymd = new Date(nowMs - offset * 86_400_000).toISOString().slice(0, 10);
+      const [y, m, d] = ymd.split('-').map(Number);
+      // 北京时间分钟 = UTC 分钟 + 8*60；19:00–22:00 随机，不会跨 UTC 日
+      const beijingMinute = 19 * 60 + Math.floor(Math.random() * 3 * 60);
+      const sentAt = new Date(
+        Date.UTC(y, m - 1, d, 0, beijingMinute - 8 * 60),
+      ).toISOString();
+      this.resultRepo.create({
+        id: crypto.randomUUID(),
+        taskId: '', // 演示历史不关联真实发送任务；ResultRepo 落库时映射为 NULL
+        friendId,
+        success: true,
+        durationMs: 800 + Math.floor(Math.random() * 2201), // 800–3000ms
+        captchaDetected: false,
+        retryCount: 0,
+        sentAt,
+      });
+    }
   }
 }
