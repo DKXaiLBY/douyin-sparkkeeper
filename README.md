@@ -66,8 +66,8 @@ SparkKeeper 想解决的是后面那一半：**让你看得见、管得住**。
 <summary><b>方式一：Docker（需要你本机已装 Docker）</b></summary>
 
 ```bash
-git clone https://github.com/DKXaiLBY/SparkKeeper.git
-cd SparkKeeper
+git clone https://github.com/DKXaiLBY/douyin-sparkkeeper.git
+cd douyin-sparkkeeper
 docker compose up -d --build
 # 打开 http://localhost:3000
 ```
@@ -84,8 +84,8 @@ docker compose up -d --build
 <summary><b>方式二：本机运行（Windows / macOS / Linux）</b></summary>
 
 ```bash
-git clone https://github.com/DKXaiLBY/SparkKeeper.git
-cd SparkKeeper
+git clone https://github.com/DKXaiLBY/douyin-sparkkeeper.git
+cd douyin-sparkkeeper
 npm run install:all
 npm run dev:server   # 终端 1：后端 :3000
 npm run dev:web      # 终端 2：前端 :5173
