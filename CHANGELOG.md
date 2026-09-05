@@ -3,6 +3,13 @@
 本项目所有值得记录的变更都会写在这里。
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 文档
+
+- Docker 部署完成真机验证（2026-09-05，Docker Desktop 29.7.2 / WSL2 后端）：**含 Chromium 的完整镜像（约 1.97GB）首次构建成功**，容器启动、健康检查、前端静态托管、`/data` 持久化、重启自恢复、容器内 Chromium（151.0.7922.34）无头启动均实测通过；douyin 真实模式的扫码登录与真实发送仍需使用者自行登录验证
+- README 补充国内网络加速构建方法：apt 可换清华镜像源；浏览器包（Chrome for Testing，约 313MB）可从 npmmirror 镜像下载后经本地静态服务器 + `PLAYWRIGHT_DOWNLOAD_HOST` 注入构建（官方 CDN 国内限速严重且按 IP 限速）
+
 ## [1.0.0] - 2026-09-03
 
 首个可用版本。核心思路：**不只是一个"跑完就没了"的脚本，而是一个看得见、管得住的看板**。

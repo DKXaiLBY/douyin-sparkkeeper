@@ -72,13 +72,42 @@ docker compose up -d --build
 # 打开 http://localhost:3000
 ```
 
-> ✅ **已真机验证**：Docker 路径已在 Docker Desktop（WSL2 后端）实测跑通——默认 mock 模式下容器启动、`/api/health` 健康检查、前端静态托管、`/data` 数据持久化均正常。
-> ⚠️ **douyin 真实模式需构建时下载 Chromium（约 300MB）**：Dockerfile 内置了自动安装步骤，但官方 CDN 在国内常被限速到几十 KB/s、可能需要数小时；国内镜像源目前没有 x64 版本可替换。网络通畅或挂代理时 `docker compose up -d --build` 即会一并装好；只跑 mock 演示模式不受影响。
+> ✅ **已真机验证（2026-09）**：Docker Desktop（WSL2 后端）实测——**含 Chromium 的完整镜像**构建成功，默认 mock 模式下容器启动、健康检查、前端静态托管、`/data` 数据持久化、重启自恢复、容器内 Chromium 无头启动均正常。
+> ℹ️ douyin 真实模式的扫码登录与真实发送涉及个人账号操作，需使用者自行完成验证；容器内浏览器环境已就绪。
 >
-> **国内网络加速（可选）**：若构建时 apt 或浏览器下载很慢，可给 apt 换国内镜像源（默认仍为官方源，不影响其他用户）：
+> **国内网络加速（可选；默认官方源，海外用户无需任何操作）**：
+>
+> ① apt 换国内镜像源（实测 6MB/s）：
 > ```powershell
 > $env:APT_MIRROR="mirrors.tuna.tsinghua.edu.cn"; docker compose up -d --build
 > ```
+>
+> ② 浏览器包（约 313MB）官方 CDN 国内限速严重（几十 KB/s，且按 IP 限速、多开下载无效）。Chromium 现以 Chrome for Testing 形式分发，**npmmirror 对其有完整镜像（实测 3MB/s 以上）**，下载后经本地静态服务器注入构建：
+>
+> ```bash
+> # 1) 查询当前 playwright 需要的确切版本与路径（与 server/package-lock.json 锁定的版本一致；
+> #    未装依赖可用 npx -y playwright@<版本> install chromium --dry-run；升级 playwright 后需重新查询）
+> cd server && npx playwright install chromium --dry-run && cd ..
+>
+> # 2) 下载三个包，目录结构与 URL 路径保持一致（版本号以上面输出为准）
+> mkdir -p browser-cache/builds/cft/151.0.7922.34/linux64 browser-cache/builds/ffmpeg/1011
+> curl -L -o browser-cache/builds/cft/151.0.7922.34/linux64/chrome-linux64.zip \
+>   https://cdn.npmmirror.com/binaries/chrome-for-testing/151.0.7922.34/linux64/chrome-linux64.zip
+> curl -L -o browser-cache/builds/cft/151.0.7922.34/linux64/chrome-headless-shell-linux64.zip \
+>   https://cdn.npmmirror.com/binaries/chrome-for-testing/151.0.7922.34/linux64/chrome-headless-shell-linux64.zip
+> curl -L -o browser-cache/builds/ffmpeg/1011/ffmpeg-linux.zip \
+>   https://cdn.playwright.dev/builds/ffmpeg/1011/ffmpeg-linux.zip   # 仅 2.3MB，npmmirror 无此包，官方源直拉即可
+>
+> # 3) 起一个本地静态文件服务器（任选其一，保持终端开着）
+> npx -y http-server browser-cache -p 8039
+> # 或 python3 -m http.server 8039 --directory browser-cache
+>
+> # 4) 另开一个终端，把下载源指向本地后构建
+> PLAYWRIGHT_DOWNLOAD_HOST=http://host.docker.internal:8039 docker compose build
+> ```
+>
+> PowerShell 把第 4 步写成：`$env:PLAYWRIGHT_DOWNLOAD_HOST="http://host.docker.internal:8039"; docker compose build`；
+> Linux 宿主机上 `host.docker.internal` 默认不可用，可换成宿主机局域网 IP。
 > 如果你在使用中改进了 Docker 配置，非常欢迎提 PR —— 感谢！
 
 </details>
