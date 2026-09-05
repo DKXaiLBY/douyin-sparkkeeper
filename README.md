@@ -72,7 +72,8 @@ docker compose up -d --build
 # 打开 http://localhost:3000
 ```
 
-> ✅ **已真机验证**：Docker 路径已在 Docker Desktop（WSL2 后端）实测跑通——默认 mock 模式下容器启动、`/api/health` 健康检查、前端静态托管、`/data` 数据持久化均正常；镜像内已装 Chromium 供 douyin 真实模式使用（要求 Node 22 基础镜像）。
+> ✅ **已真机验证**：Docker 路径已在 Docker Desktop（WSL2 后端）实测跑通——默认 mock 模式下容器启动、`/api/health` 健康检查、前端静态托管、`/data` 数据持久化均正常。
+> ⚠️ **douyin 真实模式需构建时下载 Chromium（约 300MB）**：Dockerfile 内置了自动安装步骤，但官方 CDN 在国内常被限速到几十 KB/s、可能需要数小时；国内镜像源目前没有 x64 版本可替换。网络通畅或挂代理时 `docker compose up -d --build` 即会一并装好；只跑 mock 演示模式不受影响。
 >
 > **国内网络加速（可选）**：若构建时 apt 或浏览器下载很慢，可给 apt 换国内镜像源（默认仍为官方源，不影响其他用户）：
 > ```powershell
